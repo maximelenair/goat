@@ -14,7 +14,7 @@ import (
 )
 
 //GoatEbs runs Goat for your EBS volumes - attach, mount, mkfs, etc.
-func GoatEbs(debug bool, tagPrefix string) {
+func GoatEbs(debug bool, tagPrefix string, resize2fs bool) {
 	log.Printf("WELCOME TO GOAT")
 	log.Printf("1: COLLECTING EC2 INFO")
 	ec2Instance := GetEC2InstanceData(tagPrefix)
@@ -33,11 +33,11 @@ func GoatEbs(debug bool, tagPrefix string) {
 	}
 
 	for volName, vols := range ec2Instance.Vols {
-		prepAndMountDrives(volName, vols)
+		prepAndMountDrives(volName, vols, resize2fs)
 	}
 }
 
-func prepAndMountDrives(volName string, vols []EbsVol) {
+func prepAndMountDrives(volName string, vols []EbsVol, resize2fs bool) {
 	driveLogger := log.WithFields(log.Fields{"vol_name": volName, "vols": vols})
 
 	mountPath := vols[0].MountPath
@@ -117,6 +117,21 @@ func prepAndMountDrives(volName string, vols []EbsVol) {
 	driveLogger.Info("Appending fstab entry")
 	if err := filesystem.AppendToFstab("GOAT-"+volName, desiredFs, mountPath); err != nil {
 		driveLogger.Fatalf("Couldn't append to fstab: %v", err)
+	}
+
+	if resize2fs {
+		var driveName string
+		var err error
+		for _, vol := range vols {
+			driveName, err = filesystem.GetActualBlockDeviceName(vol.AttachedName)
+			if err != nil {
+				driveLogger.Fatalf("Block device is not available %s : %v", vol.AttachedName, err)
+			}
+			cmd := exec.Command("resize2fs", driveName)
+			if err = cmd.Run(); err != nil {
+				driveLogger.Fatalf("Couldn't resize2fs: %v", err)
+			}
+		}
 	}
 
 	driveLogger.Info("Now mounting")

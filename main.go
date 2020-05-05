@@ -15,6 +15,7 @@ func main() {
 	versionPtr := flag.Bool("version", false, "Display version and exit")
 	debugPtr := flag.Bool("debug", false, "Interactive debug prompts")
 	tagPrefixPtr := flag.String("tagPrefix", "GOAT-IN", "Prefix for GOAT related tags")
+	resize2fs := flag.Bool("resize2fs", false, "Resize filesystem to match partition size before mounting")
 
 	tagPrefixEnv := os.Getenv("GOAT_TAG_PREFIX")
 	logLevelEnv := os.Getenv("GOAT_LOG_LEVEL")
@@ -63,7 +64,7 @@ func main() {
 
 	log.Printf("Running goat for %s", command)
 	if command == "ebs" {
-		GoatEbs(*debugPtr, tagPrefix)
+		GoatEbs(*debugPtr, tagPrefix, *resize2fs)
 	} else if command == "eni" {
 		GoatEni(*debugPtr, tagPrefix)
 	} else {

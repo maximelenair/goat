@@ -30,6 +30,8 @@ OPTIONS
         Prefix for GOAT related tags (default "GOAT-IN")
   -version
         Display version and exit
+  -resize2fs
+        Enable resizing of the filesystem to the size of the partition before mount
 ```
 
 You can set `-tagPrefix` and `-logLevel` with environment variables (which take precedence):
